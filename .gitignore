@@ -10,4 +10,5 @@
 *.ear
 .idea
 target
+project
 walkmanager.log

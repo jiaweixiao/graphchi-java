@@ -4,9 +4,9 @@ name := "graphchi-java"
 
 version := "0.2.2"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.12.18"
 
-crossScalaVersions := Seq("2.11.2", "2.10.3")
+crossScalaVersions := Seq("2.11.2", "2.10.3", "2.12.18")
 
 javaSource in Test := baseDirectory.value / "test"
 
