@@ -201,27 +201,71 @@ public class ALSMatrixFactorization implements GraphChiProgram<Integer, Float> {
 
 
     /**
-     * Usage: java edu.cmu.graphchi.ALSMatrixFactorization <input-file> <nshards> <D>
+     * Usage: java edu.cmu.graphchi.apps.ALSMatrixFactorization <iters> <input-file> <nshards> <D> <memBudgetMb>
      * Normally nshards of 10 or so is fine.
      * @param args
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) {
-            throw new IllegalArgumentException("Usage: java edu.cmu.graphchi.ALSMatrixFactorization <input-file> <nshards> <D>");
+        if (args.length < 3) {
+            throw new IllegalArgumentException("Usage: java edu.cmu.graphchi.apps.ALSMatrixFactorization <iters> <input-file> <nshards> <D> <memBudgetMb>");
         }
-        String baseFilename = args[0];
-        int nShards = Integer.parseInt(args[1]);
+        int niters = Integer.parseInt(args[0]);
+        String baseFilename = args[1];
+        int nShards = Integer.parseInt(args[2]);
         int D = 20;
-        if (args.length == 3) {
-            D = Integer.parseInt(args[2]);
+        if (args.length == 4) {
+            D = Integer.parseInt(args[3]);
         }
-        ALSMatrixFactorization als = computeALS(baseFilename, nShards, D, 5);
+        int memBudgetMb = (args.length >= 5 ? Integer.parseInt(args[4]) : -1);
+        
+        ALSMatrixFactorization als = computeALS(baseFilename, nShards, D, niters, memBudgetMb);
 
 
         als.writeOutputMatrices();
     }
 
+    /**
+     * Compute ALS and return the ALS object which can be used to
+     * compute predictions.
+     * @param baseFilename
+     * @param nShards
+     * @param D
+     * @return
+     * @throws IOException
+     */
+    public static ALSMatrixFactorization computeALS(String baseFilename, int nShards, int D, int iterations, int memBudgetMb) throws IOException {
+        /* Run sharding (preprocessing) if the files do not exist yet */
+        FastSharder sharder = createSharder(baseFilename, nShards);
+        if (!new File(ChiFilenames.getFilenameIntervals(baseFilename, nShards)).exists() ||
+                !new File(baseFilename + ".matrixinfo").exists()) {
+            sharder.shard(new FileInputStream(new File(baseFilename)), FastSharder.GraphInputFormat.MATRIXMARKET);
+        } else {
+            logger.info("Found shards -- no need to preprocess");
+        }
+
+        /* Init */
+        ALSMatrixFactorization als = new ALSMatrixFactorization(D, baseFilename, nShards);
+        logger.info("Set latent factor dimension to: " + als.D);
+
+        /* Run GraphChi */
+        GraphChiEngine<Integer, Float> engine = new GraphChiEngine<Integer, Float>(baseFilename, nShards);
+        engine.setEdataConverter(new FloatConverter());
+        engine.setEnableDeterministicExecution(false);
+        engine.setVertexDataConverter(null);  // We do not access vertex values.
+        engine.setModifiesInedges(false); // Important optimization
+        engine.setModifiesOutedges(false); // Important optimization
+        if (memBudgetMb > 0) {
+            engine.setMemoryBudgetMb(memBudgetMb);
+        }
+
+        engine.run(als, iterations);
+
+        /* Output RMSE */
+        double trainRMSE = Math.sqrt(als.rmse / (1.0 * engine.numEdges()));
+        logger.info("Train RMSE: " + trainRMSE + ", total edges:" + engine.numEdges());
+        return als;
+    }
 
     /**
      * Compute ALS and return the ALS object which can be used to

@@ -82,13 +82,15 @@ public class Pagerank implements GraphChiProgram<Float, Float> {
     }
 
     /**
-     * Usage: java edu.cmu.graphchi.demo.PageRank graph-name num-shards filetype(edgelist|adjlist)
+     * Usage: java edu.cmu.graphchi.apps.PageRank niters graph-name num-shards filetype(edgelist|adjlist) memBudgetMb
      * For specifying the number of shards, 20-50 million edges/shard is often a good configuration.
      */
     public static void main(String[] args) throws  Exception {
-        String baseFilename = args[0];
-        int nShards = Integer.parseInt(args[1]);
-        String fileType = (args.length >= 3 ? args[2] : null);
+        int nIters = Integer.parseInt(args[0]);
+        String baseFilename = args[1];
+        int nShards = Integer.parseInt(args[2]);
+        String fileType = (args.length >= 4 ? args[3] : null);
+        int memBudgetMb = (args.length >= 5 ? Integer.parseInt(args[4]) : -1);
 
         CompressedIO.disableCompression();
 
@@ -109,8 +111,11 @@ public class Pagerank implements GraphChiProgram<Float, Float> {
         engine.setEdataConverter(new FloatConverter());
         engine.setVertexDataConverter(new FloatConverter());
         engine.setModifiesInedges(false); // Important optimization
+        if (memBudgetMb > 0) {
+            engine.setMemoryBudgetMb(memBudgetMb);
+        }
 
-        engine.run(new Pagerank(), 4);
+        engine.run(new Pagerank(), nIters);
 
         logger.info("Ready.");
 

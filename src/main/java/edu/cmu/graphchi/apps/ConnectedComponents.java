@@ -110,13 +110,15 @@ public class ConnectedComponents implements GraphChiProgram<Integer, Integer> {
 
 
     /**
-     * Usage: java edu.cmu.graphchi.demo.ConnectedComponents graph-name num-shards filetype(edgelist|adjlist)
+     * Usage: java edu.cmu.graphchi.apps.ConnectedComponents niters graph-name num-shards filetype(edgelist|adjlist) memBudgetMb
      * For specifying the number of shards, 20-50 million edges/shard is often a good configuration.
      */
     public static void main(String[] args) throws  Exception {
-        String baseFilename = args[0];
-        int nShards = Integer.parseInt(args[1]);
-        String fileType = (args.length >= 3 ? args[2] : null);
+        int nIters = Integer.parseInt(args[0]);
+        String baseFilename = args[1];
+        int nShards = Integer.parseInt(args[2]);
+        String fileType = (args.length >= 4 ? args[3] : null);
+        int memBudgetMb = (args.length >= 5 ? Integer.parseInt(args[4]) : -1);
 
         /* Create shards */
         FastSharder sharder = createSharder(baseFilename, nShards);
@@ -135,7 +137,11 @@ public class ConnectedComponents implements GraphChiProgram<Integer, Integer> {
         engine.setEdataConverter(new IntConverter());
         engine.setVertexDataConverter(new IntConverter());
         engine.setEnableScheduler(true);
-        engine.run(new ConnectedComponents(), 5);
+        if (memBudgetMb > 0) {
+            engine.setMemoryBudgetMb(memBudgetMb);
+        }
+
+        engine.run(new ConnectedComponents(), nIters);
 
         logger.info("Ready. Going to output...");
 
