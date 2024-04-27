@@ -54,7 +54,7 @@ import edu.cmu.graphchi.util.Toplist;
 
 public class KCoreDecomposer implements GraphChiProgram<Integer, Integer> {
 
-    public static final int INFINITY = Integer.MAX_VALUE;
+    // public static final int INFINITY = Integer.MAX_VALUE;
 
     protected int vertexValuesUpdated;
     protected static int nVertexes = 0;
@@ -62,7 +62,7 @@ public class KCoreDecomposer implements GraphChiProgram<Integer, Integer> {
     private static int nIterations = 0;
     protected static BufferedWriter bw;
 
-    private static Logger logger = ChiLogger.getLogger("kCoreDecomposition");
+    private static Logger logger = ChiLogger.getLogger("KCoreDecomposer");
 
     public static void startWriting(File file, boolean append) throws IOException {
         FileWriter fw = new FileWriter(file, append);
@@ -199,22 +199,23 @@ public class KCoreDecomposer implements GraphChiProgram<Integer, Integer> {
     public static void main(String[] args) throws IOException {
 
         /** Run from command line (Example)
-         *	java -Xmx2048m -cp bin:gchi-libs/* -Dnum_threads=4 edu.cmu.graphchi.apps.kcore.KCoreDecomposition filename nbrOfShards filetype memoryBudget
+         *	java -Xmx2048m edu.cmu.graphchi.apps.kcore.KCoreDecomposer niters filename nbrOfShards filetype memoryBudget
          *
          * Assuming GraphChi jar files are saved in ./gchi-libs/
          */
 
-        String inputDirectory = "./datasets/";
-        String outputDirectory = "./output/";
+        // String inputDirectory = "./datasets/";
+        // String outputDirectory = "./output/";
 
-        String fileName = args[0];
-        int nShards = Integer.parseInt(args[1]);
-        String fileType = args[2];
-        int memBudget = (args.length >= 4 ? Integer.parseInt(args[3]) : null);
+        int nIters = Integer.parseInt(args[0]);
+        String fileName = args[1];
+        int nShards = Integer.parseInt(args[2]);
+        String fileType = args[3];
+        int memBudget = (args.length >= 5 ? Integer.parseInt(args[4]) : null);
 
         CompressedIO.disableCompression();
 
-        String inputFilePath = inputDirectory + fileName;
+        String inputFilePath = fileName;
         
         /* Preprocessing graph : Making shards */
 
@@ -238,24 +239,33 @@ public class KCoreDecomposer implements GraphChiProgram<Integer, Integer> {
         engine.setEdataConverter(new IntConverter());
         engine.setVertexDataConverter(new IntConverter());
 
-        engine.run(new KCoreDecomposer(), INFINITY);
+        engine.run(new KCoreDecomposer(), nIters);
 
         logger.info("Ready.");
 
         /* Outputting Core Values */
-        startWriting(new File(outputDirectory + "out-cores-" + fileName), false);
-        bw.write(nVertexes + "\n");
+        // startWriting(new File(outputDirectory + "out-cores-" + fileName), false);
+        // bw.write(nVertexes + "\n");
 
+        // VertexIdTranslate trans = engine.getVertexIdTranslate();
+        // TreeSet<IdInt> topToBottom = Toplist.topListInt(inputFilePath,
+        //         engine.numVertices(), engine.numVertices());
+
+        // for(IdInt walker : topToBottom) {
+        //     float coreValue = walker.getValue();
+        //     bw.write(trans.backward(walker.getVertexId()) + ", " + String.valueOf((int)coreValue) + "\n");
+        // }
+
+        // stopWriting();
+
+        System.out.println(nVertexes + "\n");
+        int i = 0;
         VertexIdTranslate trans = engine.getVertexIdTranslate();
-        TreeSet<IdInt> topToBottom = Toplist.topListInt(inputFilePath,
-                engine.numVertices(), engine.numVertices());
-
-        for(IdInt walker : topToBottom) {
+        TreeSet<IdInt> top20 = Toplist.topListInt(inputFilePath, engine.numVertices(), 20);
+        for(IdInt walker : top20) {
             float coreValue = walker.getValue();
-            bw.write(trans.backward(walker.getVertexId()) + ", " + String.valueOf((int)coreValue) + "\n");
+            System.out.println(trans.backward(walker.getVertexId()) + ", " + String.valueOf((int)coreValue) + "\n");
         }
-
-        stopWriting();
 
         System.out.println("Vertexes Processed: " + engine.numVertices());
         System.out.println("Edges Processed: " + engine.numEdges()) ;

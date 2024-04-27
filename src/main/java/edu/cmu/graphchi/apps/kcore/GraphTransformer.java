@@ -93,11 +93,11 @@ public class GraphTransformer implements GraphChiProgram<Integer, Integer> {
     public static void main(String[] args) throws IOException {
 
         /**
-         * java -Xmx2048m -cp bin:gchi-libs/* -Dnum_threads=8  edu.cmu.graphchi.apps.kcore.GraphTransformer filename nbrOfShards filetype memoryBudget
+         * java -Xmx2048m edu.cmu.graphchi.apps.kcore.GraphTransformer <filename> <nbrOfShards> <filetype> <memoryBudget>
          */
 
-        String inputDirectory = "./datasets/";
-        String outputDirectory = "./output/";
+        // String inputDirectory = "./datasets/";
+        // String outputDirectory = "./output/";
 
         String fileName = args[0];
         int nShards = Integer.parseInt(args[1]);
@@ -106,8 +106,8 @@ public class GraphTransformer implements GraphChiProgram<Integer, Integer> {
 
         CompressedIO.disableCompression();
 
-        String inputFilePath = inputDirectory + fileName;
-        
+        String inputFilePath = fileName;
+
         /* Making shards */
         FastSharder sharder = createSharder(inputFilePath, nShards);
         if (inputFilePath.equals("pipein")) {     // Allow piping graph in
@@ -133,15 +133,16 @@ public class GraphTransformer implements GraphChiProgram<Integer, Integer> {
 
         engine.run(new GraphTransformer(), 1);
 
-        stopWriting();
+        // stopWriting();
         
-        /* Write report file */
-        startWriting(new File(outputDirectory + "gtransformer-report-" + fileName), false);
-        bw.write("Total edges added: " + nEdgesAdded + "\n");
-        stopWriting();
+        // /* Write report file */
+        // startWriting(new File(outputDirectory + "gtransformer-report-" + fileName), false);
+        // bw.write("Total edges added: " + nEdgesAdded + "\n");
+        // stopWriting();
+
+        System.out.println("Total edges added: " + nEdgesAdded + "\n");
 
         logger.info("Success!");
-
     }
 
 }
