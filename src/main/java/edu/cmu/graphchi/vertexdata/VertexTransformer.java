@@ -33,7 +33,7 @@ public class VertexTransformer {
 
         int CHUNK = 1000000;
         for(int i=0; i < numVertices; i += CHUNK) {
-            int en = i + CHUNK;
+            int en = i + CHUNK - 1;
             if (en >= numVertices) en = numVertices - 1;
             int blockId =  vertexData.load(i, en);
 

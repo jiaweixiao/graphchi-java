@@ -55,7 +55,7 @@ public class VertexAggregator {
 
         int CHUNK = 1000000;
         for(int i=0; i < numVertices; i += CHUNK) {
-            int en = i + CHUNK;
+            int en = i + CHUNK - 1;
             if (en >= numVertices) en = numVertices - 1;
             int blockId =  vertexData.load(i, en);
 
@@ -100,7 +100,7 @@ public class VertexAggregator {
             public boolean hasNext() {
                 if (i >= numVertices - 1) return false;
                 if (curIter == null || !curIter.hasNext()) {
-                    int en = i + CHUNK;
+                    int en = i + CHUNK - 1;
                     if (en >= numVertices) en = numVertices - 1;
 
                     try {
